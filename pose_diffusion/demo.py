@@ -31,7 +31,7 @@ from util.load_img_folder import load_and_preprocess_images
 from util.geometry_guided_sampling import geometry_guided_sampling
 from util.metric import compute_ARE
 from visdom import Visdom
-
+os.chdir(os.path.dirname(__file__))
 
 @hydra.main(config_path="../cfgs/", config_name="default")
 def demo(cfg: DictConfig) -> None:
@@ -87,12 +87,12 @@ def demo(cfg: DictConfig) -> None:
             GGS_cfg = OmegaConf.to_container(cfg.GGS)
 
             cond_fn = partial(geometry_guided_sampling, matches_dict=matches_dict, GGS_cfg=GGS_cfg)
-            print("[92m=====> Sampling with GGS <=====[0m")
+            print("\033[92m=====> Sampling with GGS <=====\033[0m")
         else:
             cond_fn = None
     else:
         cond_fn = None
-        print("[92m=====> Sampling without GGS <=====[0m")
+        print("\033[92m=====> Sampling without GGS <=====\033[0m")
 
     images = images.unsqueeze(0)
 
@@ -114,17 +114,7 @@ def demo(cfg: DictConfig) -> None:
     elapsed_time = end_time - start_time
     print("Time taken: {:.4f} seconds".format(elapsed_time))
 
-    # Visualization
-    try:
-        viz = Visdom()
 
-        cams_show = {"ours_pred": pred_cameras, "ours_pred_aligned": pred_cameras_aligned, "gt_cameras": gt_cameras}
-
-        fig = plot_scene({f"{folder_path}": cams_show})
-
-        viz.plotlyplot(fig, env="visual", win="cams")
-    except:
-        print("Please check your visdom connection")
 
     # Compute metrics if gt is available
 
@@ -145,7 +135,18 @@ def demo(cfg: DictConfig) -> None:
         print(f"For {folder_path}: the absolute rotation error is {ARE:.6f} degrees.")
     else:
         print(f"No GT provided. No evaluation conducted.")
+        # Visualization
+    try:
+        viz = Visdom(port=cfg.vis.port)
 
+        cams_show = {"ours_pred": pred_cameras, "ours_pred_aligned": pred_cameras_aligned, "gt_cameras": gt_cameras}
+
+        fig = plot_scene({f"{folder_path}": cams_show})
+
+        viz.plotlyplot(fig, env="main", win="cameras")
+        print("visualize link: https://localhost:{}".format(cfg.vis.port))
+    except Exception as e:
+        print(e)
 
 if __name__ == "__main__":
     demo()
