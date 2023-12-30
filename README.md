@@ -20,7 +20,11 @@ Download the model checkpoint trained on Co3D from [Dropbox](https://www.dropbox
 
 
 ### 2. Run the Demo
-
+Open a visdom console first.
+```bash
+visdom
+```
+Run the camera pose estimation demo.
 ```.bash
 python demo.py image_folder="samples/apple" ckpt="/PATH/TO/DOWNLOADED/CKPT"
 ```
