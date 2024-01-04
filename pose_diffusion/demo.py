@@ -4,32 +4,24 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-import argparse
-import datetime
-import glob
 import os
-import re
 import time
-from pathlib import Path
 import numpy as np
 import torch
-from typing import Dict, List, Optional, Union
 from omegaconf import OmegaConf, DictConfig
 import hydra
 from hydra.utils import instantiate, get_original_cwd
-import models
 import time
 from functools import partial
 from pytorch3d.renderer.cameras import PerspectiveCameras
 from pytorch3d.ops import corresponding_cameras_alignment
-from pytorch3d.implicitron.tools import model_io, vis_utils
 from pytorch3d.vis.plotly_vis import plot_scene
 
 from util.utils import seed_all_random_engines
 from util.match_extraction import extract_match
 from util.load_img_folder import load_and_preprocess_images
 from util.geometry_guided_sampling import geometry_guided_sampling
-from util.metric import compute_ARE
+from util.metric import compute_ARE, compute_ATE
 from visdom import Visdom
 os.chdir(os.path.dirname(__file__))
 
@@ -132,7 +124,9 @@ def demo(cfg: DictConfig) -> None:
 
         # Compute the absolute rotation error
         ARE = compute_ARE(pred_cameras_aligned.R, gt_cameras.R).mean()
+        ATE = compute_ATE(pred_cameras_aligned.T, gt_cameras.T).mean()
         print(f"For {folder_path}: the absolute rotation error is {ARE:.6f} degrees.")
+        print(f"the absolute translation error is {ATE:.6f} m.")
     else:
         print(f"No GT provided. No evaluation conducted.")
         # Visualization
@@ -144,7 +138,7 @@ def demo(cfg: DictConfig) -> None:
         fig = plot_scene({f"{folder_path}": cams_show})
 
         viz.plotlyplot(fig, env="main", win="cameras")
-        print("visualize link: https://localhost:{}".format(cfg.vis.port))
+        print("visualize link: 127.0.0.1:{}".format(cfg.vis.port))
     except Exception as e:
         print(e)
 
