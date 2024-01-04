@@ -4,12 +4,12 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-import random
+# import random
 import numpy as np
 import torch
 
 from pytorch3d.transforms import so3_relative_angle
-
+from typing import Union
 
 def camera_to_rel_deg(pred_cameras, gt_cameras, device, batch_size):
     """
@@ -179,7 +179,7 @@ def compare_translation_by_angle(t_gt, t, eps=1e-15, default_err=1e6):
     err_t[torch.isnan(err_t) | torch.isinf(err_t)] = default_err
     return err_t
 
-def compute_ARE(rotation1, rotation2):
+def compute_ARE(rotation1:Union[torch.Tensor, np.ndarray], rotation2:Union[torch.Tensor, np.ndarray]):
     if isinstance(rotation1, torch.Tensor):
         rotation1 = rotation1.cpu().detach().numpy()
     if isinstance(rotation2, torch.Tensor):
@@ -190,3 +190,12 @@ def compute_ARE(rotation1, rotation2):
     theta = np.arccos(np.clip(t, -1, 1))
     error = theta * 180 / np.pi
     return np.minimum(error, np.abs(180 - error))
+
+def compute_ATE(t1, t2):
+    if isinstance(t1, torch.Tensor):
+        t1 = t1.cpu().detach().numpy()
+    if isinstance(t2, torch.Tensor):
+        t2 = t2.cpu().detach().numpy()
+    
+    error = np.sqrt(np.sum((t1-t2)**2, axis=1))
+    return error
